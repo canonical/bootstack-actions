@@ -64,4 +64,4 @@ shared-config: &shared-config
       color: "fbca04"
 
 repos:
-  rgildein/bootstack-github-actions: *shared-config
+  canonical/bootstack-actions: *shared-config
