@@ -50,5 +50,6 @@ jobs:
       tox-version: ${{ inputs.tox-version }}
       working-directory: ${{ inputs.working-directory }}
       snapcraft: false
+      posargs: ${{ inputs.posargs }}
       juju-env: true
       provider: ${{ inputs.provider }}
