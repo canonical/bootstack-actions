@@ -18,7 +18,7 @@ jobs:
       python-version-func: "3.10"
       tox-version: "<4"
       working-directory: ./tests/test_charm_repo
-      posargs: "['--series jammy']"
+      commands: "['FUNC_ARGS="--series jammy" make functional']"
 
   snap-pr:
     uses: ./.github/workflows/snap-pull-request.yaml

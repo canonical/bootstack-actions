@@ -26,12 +26,18 @@ on:
         description: "Flag if snap is tested."
         type: boolean
         default: false
-      posargs:
+      commands:
         required: false
         description: |
-          "Optional postargs for `tox -e func -- <postargs>`, e.g. '--series jammy'"
+          Command to run functional test in strategies. It defaults to
+          `make functional`, but is defined as a list, so `['make functional']`.
+          This allows you to run multiple tests with different parameters.
+          Examples:
+          - ['FUNC_ARGS="--series jammy" make functional',
+             'FUNC_ARGS="--series focal" make functional']
+          - ['tox -e func -- -sv --series jammy', 'tox -e func -- -sv --series focal']
         type: string
-        default: "['']"  # empty string as default so func test is run at least one
+        default: "['make functional']"
       # actions-operator
       juju-env:
         required: true
@@ -75,6 +81,6 @@ jobs:
       tox-version: ${{ inputs.tox-version }}
       working-directory: ${{ inputs.working-directory }}
       snapcraft: ${{ inputs.snapcraft }}
-      posargs: ${{ inputs.posargs }}
+      commands: ${{ inputs.commands }}
       juju-env: ${{ inputs.juju-env }}
       provider: ${{ inputs.provider }}

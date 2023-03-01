@@ -23,12 +23,18 @@ on:
         description: "Flag if snap is tested."
         type: boolean
         default: false
-      posargs:
+      commands:
         required: false
         description: |
-          "Optional postargs for `tox -e func -- <postargs>`, e.g. '--series jammy'"
+          Command to run functional test in strategies. It defaults to
+          `make functional`, but is defined as a list, so `['make functional']`.
+          This allows you to run multiple tests with different parameters.
+          Examples:
+          - ['FUNC_ARGS="--series jammy" make functional',
+             'FUNC_ARGS="--series focal" make functional']
+          - ['tox -e func -- -sv --series jammy', 'tox -e func -- -sv --series focal']
         type: string
-        default: "['']"  # empty string as default so func test is run at least one
+        default: "['make functional']"
       # actions-operator
       juju-env:
         required: false
@@ -47,7 +53,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        posargs: ${{ fromJson(inputs.posargs) }}
+        command: ${{ fromJson(inputs.commands) }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python
@@ -69,6 +75,6 @@ jobs:
       - name: Install snapcraft
         if: ${{ inputs.snapcraft }}
         run: sudo snap install snapcraft --classic
-      - name: Run tests with `${{ matrix.posargs }}` posargs
+      - name: Run tests with `${{ matrix.command }}`
         working-directory: ${{ inputs.working-directory }}
-        run: tox -e func -- -sv ${{ matrix.posargs }}
+        run: ${{ matrix.command }}
