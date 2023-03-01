@@ -15,8 +15,7 @@ jobs:
       python-version: "3.10"
       tox-version: "<4"
       working-directory: ./tests/test_charm_repo
-      posargs: "['--series jammy']"
-      juju-env: true
+      commands: "['FUNC_ARGS=\"--series jammy\" make functional']"
       provider: "lxd"
 
   snap-func:

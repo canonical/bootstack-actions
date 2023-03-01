@@ -1,7 +1,8 @@
-name: test snap
+name: test-snap
 base: core22
 version: '0.0.1'
 summary: Test snap for BootStack actions
+description: Test snap for BootStack actions
 
 grade: devel
 confinement: devmode

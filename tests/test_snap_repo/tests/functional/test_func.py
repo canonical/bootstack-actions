@@ -1,3 +1,8 @@
+import os
+
+
 def test_main():
     """Dummy test to run unit tests."""
-    assert True, "Something is wrong with your dimensions"
+    snap_path = os.environ.get("TEST_SNAP")
+    assert snap_path is not None
+    assert os.path.exists(snap_path)

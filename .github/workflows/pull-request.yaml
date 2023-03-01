@@ -7,10 +7,12 @@ on:
         required: true
         description: "Python version"
         type: string
+        default: "['3.8', '3.10']"
       python-version-func:
         required: true
         description: "Python version"
         type: string
+        default: "3.10"
       tox-version:
         required: false
         description: "Tox version, which should be used, e.g. `<4`"
@@ -39,9 +41,6 @@ on:
         type: string
         default: "['make functional']"
       # actions-operator
-      juju-env:
-        required: true
-        type: boolean
       provider:
         required: false
         type: string
@@ -82,5 +81,4 @@ jobs:
       working-directory: ${{ inputs.working-directory }}
       snapcraft: ${{ inputs.snapcraft }}
       commands: ${{ inputs.commands }}
-      juju-env: ${{ inputs.juju-env }}
       provider: ${{ inputs.provider }}

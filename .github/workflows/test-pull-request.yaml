@@ -11,20 +11,21 @@ on:
 
 jobs:
   charm-pr:
-    uses: ./.github/workflows/charm-pull-request.yaml
+    uses: ./.github/workflows/pull-request.yaml
     secrets: inherit
     with:
       python-version-unit: "['3.10']"
       python-version-func: "3.10"
       tox-version: "<4"
       working-directory: ./tests/test_charm_repo
-      commands: "['FUNC_ARGS="--series jammy" make functional']"
+      commands: "['FUNC_ARGS=\"--series jammy\" make functional']"
 
   snap-pr:
-    uses: ./.github/workflows/snap-pull-request.yaml
+    uses: ./.github/workflows/pull-request.yaml
     secrets: inherit
     with:
       python-version-unit: "['3.10']"
       python-version-func: "3.10"
       tox-version: "<4"
       working-directory: ./tests/test_snap_repo
+      snapcraft: true
