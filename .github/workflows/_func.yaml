@@ -74,7 +74,6 @@ jobs:
         if: ${{ inputs.provider == 'lxd' && inputs.nested-containers }}
         run: |
           lxc profile set default security.nesting=true
-          lxc profile set default security.privileged=true
       - name: Remove tox install by actions-operator
         run: sudo apt remove tox -y
       - name: Install snapcraft
