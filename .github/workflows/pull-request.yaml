@@ -45,6 +45,10 @@ on:
         required: false
         type: string
         default: "lxd"
+      nested-containers:
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   lint-unit:
@@ -82,3 +86,4 @@ jobs:
       snapcraft: ${{ inputs.snapcraft }}
       commands: ${{ inputs.commands }}
       provider: ${{ inputs.provider }}
+      nested-containers: ${{ inputs.nested-containers }}

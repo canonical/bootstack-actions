@@ -17,6 +17,7 @@ jobs:
       working-directory: ./tests/test_charm_repo
       commands: "['FUNC_ARGS=\"--series jammy\" make functional']"
       provider: "lxd"
+      nested-containers: true
 
   snap-func:
     uses: ./.github/workflows/_func.yaml
