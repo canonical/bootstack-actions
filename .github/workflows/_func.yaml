@@ -70,15 +70,16 @@ jobs:
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: ${{ inputs.provider }}
-      - name: Enabled nested LXD containers
-        if: ${{ inputs.provider == 'lxd' && inputs.nested-containers }}
-        run: |
-          lxc profile set default security.nesting=true
       - name: Remove tox install by actions-operator
         run: sudo apt remove tox -y
       - name: Install snapcraft
         if: ${{ inputs.snapcraft }}
         run: sudo snap install snapcraft --classic
+      - name: Enabled nested LXD containers
+        if: ${{ inputs.provider == 'lxd' && inputs.nested-containers }}
+        run: |
+          lxc profile set default security.nesting=true
+          lxc profile set default security.privileged=true
       - name: Run tests with `${{ matrix.command }}`
         working-directory: ${{ inputs.working-directory }}
         run: ${{ matrix.command }}
