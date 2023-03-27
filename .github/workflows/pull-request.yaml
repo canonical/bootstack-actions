@@ -29,17 +29,17 @@ on:
         type: boolean
         default: false
       commands:
-        required: false
+        required: true
         description: |
-          Command to run functional test in strategies. It defaults to
-          `make functional`, but is defined as a list, so `['make functional']`.
-          This allows you to run multiple tests with different parameters.
+          Command to run functional test in strategies. It accepts a stringified list
+          of commands, which allows you to run multiple tests with different parameters.
+          This is a required input field.
           Examples:
-          - ['FUNC_ARGS="--series jammy" make functional',
-             'FUNC_ARGS="--series focal" make functional']
-          - ['tox -e func -- -sv --series jammy', 'tox -e func -- -sv --series focal']
+          - "['make functional']"
+          - "['FUNC_ARGS="--series jammy" make functional',
+             'FUNC_ARGS="--series focal" make functional']"
+          - "['tox -e func -- -sv --series jammy', 'tox -e func -- -sv --series focal']"
         type: string
-        default: "['make functional']"
       # actions-operator
       provider:
         required: false
