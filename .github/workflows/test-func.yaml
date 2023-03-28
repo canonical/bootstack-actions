@@ -1,4 +1,4 @@
-nahttps://github.com/canonical/bootstack-actions/pull/14me: Test for func workflow
+name: Test for func workflow
 
 on:
   push:
