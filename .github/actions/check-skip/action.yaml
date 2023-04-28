@@ -1,0 +1,144 @@
+name: 'Check skips'
+description: 'Check whether some workflows should be skipped'
+inputs:
+  ignore-changes:
+    required: false
+    description: |
+      Directories and files to ignore when checking changes to determine whether functional
+      tests should be skipped. This is an optional input field and it accepts a regex string.
+      The paths should be relative to the repo's root directory.
+      Examples:
+      - "^(README.md|doc/|tests/unit/)"
+    default: "^$"
+  check-lint-unit-skip:
+    required: false
+    description: "Whether to check the possibility of skipping lint and unit tests"
+    default: false
+  check-func-skip:
+    required: false
+    description: "Whether to check the possibility of skipping functional tests"
+    default: false
+outputs:
+  skip-lint-unit-tests:
+    description: "Whether to skip lint and unit tests"
+    value: ${{ steps.skip-lint-unit-tests.outputs.skip }}
+  skip-func-tests:
+    description: "Whether to skip functional tests"
+    value: ${{ steps.skip-func-tests.outputs.skip }}
+runs:
+  using: "composite"
+  steps:
+    - name: Get latest workflow info
+      id: latest-workflow
+      env:
+        CURRENT_BRANCH: ${{ github.event.pull_request.head.ref }}
+      shell: bash
+      run: |
+        function get_last_workflow() {
+          # get all previus workflows for "test_full.yml" file and current branch
+          _workflows=$(curl -H "Accept: application/vnd.github.v3+json" "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/workflows/pr.yaml/runs?branch=$CURRENT_BRANCH")
+          # clear unsupported characters
+          _workflows_safe=$(echo "$_workflows" | tr "\r" " " | tr "\n" " " | tr "\t" " ")
+          # select previous (current is with index 0) workflow
+          _last_workflow=$(echo "$_workflows_safe" | jq -c '.workflow_runs[1]')
+          echo "$_last_workflow"
+        }
+        # get last workflow
+        workflow=$(get_last_workflow)
+        # wait (max is 60min) if the last workflow is still running
+        max_time=$((SECONDS+60*60))
+        while [[ "$workflow" != "null" && "$(echo $workflow | jq -r '.status')" != "completed" && $SECONDS -lt $max_time ]];
+        do
+          workflow=$(get_last_workflow)
+          echo "Waiting for workflow + $(echo $workflow | jq -r '.id')"
+          sleep 20
+        done
+        # define an empty value if the workflow is not found
+        if [[ -z "$workflow" ]]; then
+          workflow='{"head_sha": "", "status": "", "conclusion": ""}'
+        fi
+        echo "workflow=$workflow" >> $GITHUB_OUTPUT
+    - name: Check to see if there is any new commits
+      id: new-commit
+      env:
+        LATEST_HEAD_SHA: ${{ fromJson(steps.latest-workflow.outputs.workflow).head_sha }}
+        CURRENT_SHA: ${{ github.event.pull_request.head.sha }}
+      shell: bash
+      run: |
+        if [ "$LATEST_HEAD_SHA" != "$CURRENT_SHA" ]
+        then
+          echo "new=1" >> $GITHUB_OUTPUT
+          echo "There's a new commit."
+        else
+          echo "new=0" >> $GITHUB_OUTPUT
+          echo "There is no new commit."
+        fi
+    - name: Track changed files in the PR for functional tests
+      id: check-files-changes
+      if: ${{ inputs.check-func-skip == 'true' }}
+      shell: bash
+      run: |
+        git remote add upstream $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
+        git fetch upstream 
+
+        # infer the upstream repo's default branch
+        if git branch -r | grep upstream/main
+        then
+          export DEFAULT_BRANCH="upstream/main"
+        else
+          export DEFAULT_BRANCH="upstream/master"
+        fi
+        echo $DEFAULT_BRANCH
+
+        changed=1
+        git diff --name-only $DEFAULT_BRANCH | grep -vqE "$IGNORE_CHANGES" || changed=0
+        echo "changed=$changed" >> $GITHUB_OUTPUT
+        if [ $changed == 1 ]
+        then
+          echo "Some unignored files has changed comparing to the upstream branch."
+        else
+          echo "No unignored changes were found."
+        fi
+      env:
+        IGNORE_CHANGES: ${{inputs.ignore-changes}}
+    - name: Check whether to skip lint and unit tests
+      id: skip-lint-unit-tests
+      if: ${{ inputs.check-lint-unit-skip == 'true' }}
+      env:
+        WORKFLOW_STATUS: ${{ fromJson(steps.latest-workflow.outputs.workflow).status }}
+        WORKFLOW_CONCLUSION: ${{ fromJson(steps.latest-workflow.outputs.workflow).conclusion }}
+        WORKFLOW_URL: ${{ fromJson(steps.latest-workflow.outputs.workflow).html_url }}
+        NEW_COMMIT: ${{ steps.new-commit.outputs.new }}
+      shell: bash
+      run: |
+        if [[ $WORKFLOW_STATUS == 'completed' && $WORKFLOW_CONCLUSION == 'success' && $NEW_COMMIT == 0 ]]; then
+            echo "No new commits since previous workflow run. Lint and unit tests will be skipped."
+            echo "Previous run result can be found at $WORKFLOW_URL"
+            echo "skip=1" >> $GITHUB_OUTPUT
+        else
+          echo "Lint and unit tests will be run"
+          echo "skip=0" >> $GITHUB_OUTPUT
+        fi
+    - name: Check whether to skip functional tests
+      id: skip-func-tests
+      if: "${{ inputs.check-func-skip == 'true' }}"
+      env:
+        WORKFLOW_STATUS: ${{ fromJson(steps.latest-workflow.outputs.workflow).status }}
+        WORKFLOW_CONCLUSION: ${{ fromJson(steps.latest-workflow.outputs.workflow).conclusion }}
+        WORKFLOW_URL: ${{ fromJson(steps.latest-workflow.outputs.workflow).html_url }}
+        NEW_COMMIT: ${{ steps.new-commit.outputs.new }}
+        CORE_FILE_CHANGED: ${{ steps.check-files-changes.outputs.changed }}
+      shell: bash
+      run: |
+        if [[ $WORKFLOW_STATUS == 'completed' && $WORKFLOW_CONCLUSION == 'success' && $NEW_COMMIT == 0 ]]; then
+          echo "No new commits since previous workflow run. Functioal tests will be skipped."
+          echo "Previous run result can be found at $WORKFLOW_URL"
+          echo "skip=1" >> $GITHUB_OUTPUT
+        elif [[ $WORKFLOW_STATUS == 'completed' && $WORKFLOW_CONCLUSION == 'success' && $CORE_FILE_CHANGED == 0 ]]; then
+          echo "New commits detected but no unignored changes comparing to the upstream branch."
+          echo "Functioal tests will be skipped."
+          echo "skip=1" >> $GITHUB_OUTPUT
+        else
+          echo "Functional tests will be run"
+          echo "skip=0" >> $GITHUB_OUTPUT
+        fi
