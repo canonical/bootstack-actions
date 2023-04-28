@@ -31,28 +31,55 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
+    - name: Check whether to skip lint and unit tests
+      id: check-lint-unit-skip
+      if: github.event.review.body != 'recheck'
+      uses: canonical/bootstack-actions/.github/actions/check-skip@main
+      with:
+        check-lint-unit-skip: true
     - name: Set up Python ${{ matrix.python-version }}
+      if: |
+        github.event.review.body == 'recheck'
+        || steps.check-lint-unit-skip.outputs.skip-lint-unit-tests == 0
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
+      if: |
+        github.event.review.body == 'recheck'
+        || steps.check-lint-unit-skip.outputs.skip-lint-unit-tests == 0
       run: |
         python -m pip install --upgrade pip
         python -m pip install "tox${{ inputs.tox-version }}"
     - name: Run lint checkers
+      if: |
+        github.event.review.body == 'recheck'
+        || steps.check-lint-unit-skip.outputs.skip-lint-unit-tests == 0
       working-directory: ${{ inputs.working-directory }}
       run: tox -e lint
     - name: Run unit tests
+      if: |
+        github.event.review.body == 'recheck'
+        || steps.check-lint-unit-skip.outputs.skip-lint-unit-tests == 0
       working-directory: ${{ inputs.working-directory }}
       run: tox -e unit
     - name: Save PR number to file
+      if: |
+        github.event.review.body == 'recheck'
+        || steps.check-lint-unit-skip.outputs.skip-lint-unit-tests == 0
       run: echo ${{ github.event.number }} > PR_NUMBER.txt
     - name: Archive PR number
+      if: |
+        github.event.review.body == 'recheck'
+        || steps.check-lint-unit-skip.outputs.skip-lint-unit-tests == 0
       uses: actions/upload-artifact@v3
       with:
         name: PR_NUMBER
         path: PR_NUMBER.txt
     - name: Archive code coverage results
+      if: |
+        github.event.review.body == 'recheck'
+        || steps.check-lint-unit-skip.outputs.skip-lint-unit-tests == 0
       uses: actions/upload-artifact@v3
       with:
         name: coverage-report

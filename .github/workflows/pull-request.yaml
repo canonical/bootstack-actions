@@ -54,6 +54,16 @@ on:
         required: false
         type: boolean
         default: false
+      ignore-changes:
+        required: false
+        type: string
+        description: |
+          Directories to ignore when checking changes. This is an optional input
+          field and it accepts a stringified list of directory pathes separated
+          by "|". The pathes should be relative to the repo's root directory.
+          Examples:
+          - "doc/|tests/unit/"
+        default: "^$"
 
 jobs:
   lint-unit:
@@ -62,9 +72,9 @@ jobs:
     # Note(rgildein): Lint checkers and unit tests should be triggered on any pull requested,
     # approval pull request, review was submitted or review comment with recheck.
     if: |
-      github.event_name == 'pull_request' ||
-      github.event.review.state == 'approved' ||
-      github.event.review.body == 'recheck'
+      github.event_name == 'pull_request'
+      || github.event.review.state == 'approved'
+      || github.event.review.body == 'recheck'
     secrets: inherit
     with:
       python-version: ${{ inputs.python-version-unit }}
@@ -73,12 +83,13 @@ jobs:
 
   func:
     uses: ./.github/workflows/_func.yaml
-    needs: 
+    needs:
     - lint-unit
     # Note(rgildein): Functional tests should be triggered only for commits to
     # master/main branch, if PR was approved or review comment with recheck
     if: |
       contains(fromJson('["main", "master"]'), github.event.ref_name) ||
+      github.event_name == 'pull_request' ||
       github.event.review.state == 'approved' ||
       github.event.review.body == 'recheck'
     secrets: inherit
@@ -91,3 +102,4 @@ jobs:
       commands: ${{ inputs.commands }}
       provider: ${{ inputs.provider }}
       nested-containers: ${{ inputs.nested-containers }}
+      ignore-changes: ${{ inputs.ignore-changes }}

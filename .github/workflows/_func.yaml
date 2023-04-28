@@ -49,6 +49,16 @@ on:
         required: false
         type: boolean
         default: false
+      ignore-changes:
+        required: false
+        type: string
+        description: |
+          Directories and files to ignore when checking changes to determine whether functional
+          tests should be skipped. This is an optional input field and it accepts a regex string.
+          The paths should be relative to the repo's root directory.
+          Examples:
+          - "^(README.md|doc/|tests/unit/)"
+        default: "^$"
 
 jobs:
   func:
@@ -63,25 +73,49 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: true
+      - name: Check whether to skip the functional test
+        id: check-func-skip
+        if: github.event.review.body != 'recheck'
+        uses: canonical/bootstack-actions/.github/actions/check-skip@main
+        with:
+          ignore-changes: ${{ inputs.ignore-changes }}
+          check-func-skip: true
       - name: Setup Python
+        if: |
+          github.event.review.body == 'recheck'
+          || steps.check-func-skip.outputs.skip-func-tests == 0
         uses: actions/setup-python@v4
         with:
           python-version: ${{ inputs.python-version }}
       - name: Install tox
+        if: |
+          github.event.review.body == 'recheck'
+          || steps.check-func-skip.outputs.skip-func-tests == 0
         run: |
           python -m pip install --upgrade pip
           python -m pip install "tox${{ inputs.tox-version }}"
       - name: Setup Juju environment
+        if: |
+          github.event.review.body == 'recheck'
+          || steps.check-func-skip.outputs.skip-func-tests == 0
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: ${{ inputs.provider }}
       - name: Remove tox install by actions-operator
+        if: |
+          github.event.review.body == 'recheck'
+          || steps.check-func-skip.outputs.skip-func-tests == 0
         run: sudo apt remove tox -y
       - name: Install snapcraft
-        if: ${{ inputs.snapcraft }}
+        if: |
+          inputs.snapcraft &&
+          (github.event.review.body == 'recheck' || steps.check-func-skip.outputs.skip-func-tests == 0)
         run: sudo snap install snapcraft --classic
       - name: Enabled nested LXD containers
-        if: ${{ inputs.provider == 'lxd' && inputs.nested-containers }}
+        if: |
+          inputs.provider == 'lxd'
+          && inputs.nested-containers
+          && (github.event.review.body == 'recheck' || steps.check-func-skip.outputs.skip-func-tests == 0)
         run: |
           # create new lxd project and configure nesting & privileged
           lxc profile show default > default-lxc-profile.yaml
@@ -90,7 +124,10 @@ jobs:
           lxc profile set --project nested-lxd default security.nesting=true
           lxc profile set --project nested-lxd default security.privileged=true
           # set default project to be nested-lxd project
-          juju model-default project=nested-lxd
+          juju model-default project=nested-lx
       - name: Run tests with `${{ matrix.command }}`
+        if: |
+          github.event.review.body == 'recheck'
+          || steps.check-func-skip.outputs.skip-func-tests == 0
         working-directory: ${{ inputs.working-directory }}
         run: ${{ matrix.command }}
