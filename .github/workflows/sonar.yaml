@@ -2,6 +2,11 @@ name: SonarCloud
 
 on:
   workflow_call:
+    inputs:
+      workflow-name:
+        required: true
+        description: "The name of the workflow that triggers sonar scan"
+        type: string
 
 jobs:
   sonarcloud:
@@ -15,7 +20,7 @@ jobs:
         if: github.event.workflow_run.event == 'pull_request'
         uses: dawidd6/action-download-artifact@v2
         with:
-          workflow: CI Setup
+          workflow: ${{ inputs.workflow-name }}
           run_id: ${{ github.event.workflow_run.id }}
           name: PR_NUMBER
       - name: Read PR_NUMBER.txt
@@ -74,7 +79,7 @@ jobs:
         working-directory: .
         run: |
             mkdir tests/unit/report
-            cp cov.xml tests/unit/report/coverage.xml
+            cp coverage.xml tests/unit/report/coverage.xml
       - name: SonarCloud Scan on PR
         if: github.event.workflow_run.event == 'pull_request'
         uses: SonarSource/sonarcloud-github-action@master
