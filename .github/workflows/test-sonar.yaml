@@ -1,10 +1,13 @@
 name: SonarCloud
 on:
   workflow_run:
-    workflows: [PR workflow running lint checkers, unit and functional tests]
+    workflows: 
+      - Test for PR workflow
     types: [completed]
 
 jobs:
   sonar:
     uses: ./.github/workflows/sonar.yaml
     secrets: inherit
+    with:
+      workflow-name: Test for PR workflow
