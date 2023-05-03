@@ -66,40 +66,75 @@ on:
         default: "^$"
 
 jobs:
-  lint-unit:
-    name: Lint checkers and unit tests
-    uses: ./.github/workflows/_lint-unit.yaml
-    # Note(rgildein): Lint checkers and unit tests should be triggered on any pull requested,
-    # approval pull request, review was submitted or review comment with recheck.
+  check-skip:
+    name: Check if any tests meet the requirements for skipping
     if: |
       github.event_name == 'pull_request'
       || github.event.review.state == 'approved'
       || github.event.review.body == 'recheck'
-    secrets: inherit
-    with:
-      python-version: ${{ inputs.python-version-unit }}
-      tox-version: ${{ inputs.tox-version }}
-      working-directory: ${{ inputs.working-directory }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check whether to skip lint and unit tests
+        if: github.event.review.body != 'recheck'
+        uses: canonical/bootstack-actions/.github/actions/check-skip@main
+        with:
+          ignore-changes: ${{ inputs.ignore-changes }}
+
+  lint-unit:
+    name: Lint checkers and unit tests
+    needs:
+    - check-skip
+    # Note(rgildein, txiao): Lint checkers and unit tests should be triggered on
+    # any pull requested, approval pull request, or review comment with recheck.
+    if: |
+      github.event_name == 'pull_request'
+      || github.event.review.state == 'approved'
+      || github.event.review.body == 'recheck'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ${{ fromJson(inputs.python-version-unit) }}
+    steps:
+    - name: Running lint check and unit tests for the source repo
+      if: |
+        github.event.review.body == 'recheck'
+        || needs.check-skip.outputs.skip-lint-unit-tests == 0
+      uses: canonical/bootstack-actions/.github/actions/lint-unit-test@main
+      with:
+        python-version: ${{ matrix.python-version }}
+        tox-version: ${{ inputs.tox-version }}
+        working-directory: ${{ inputs.working-directory }}
 
   func:
-    uses: ./.github/workflows/_func.yaml
+    name: Functional tests
     needs:
     - lint-unit
-    # Note(rgildein): Functional tests should be triggered only for commits to
-    # master/main branch, if PR was approved or review comment with recheck
+    # Note(rgildein, txiao): Functional tests should be triggered for commits to
+    # master/main branch, any pull requested, approval pull request, or review
+    # comment with recheck.
     if: |
       contains(fromJson('["main", "master"]'), github.event.ref_name) ||
       github.event_name == 'pull_request' ||
       github.event.review.state == 'approved' ||
       github.event.review.body == 'recheck'
-    secrets: inherit
-    with:
-      python-version: ${{ inputs.python-version-func }}
-      tox-version: ${{ inputs.tox-version }}
-      working-directory: ${{ inputs.working-directory }}
-      timeout-minutes: ${{ inputs.timeout-minutes }}
-      snapcraft: ${{ inputs.snapcraft }}
-      commands: ${{ inputs.commands }}
-      provider: ${{ inputs.provider }}
-      nested-containers: ${{ inputs.nested-containers }}
-      ignore-changes: ${{ inputs.ignore-changes }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    strategy:
+      fail-fast: true
+      matrix:
+        command: ${{ fromJson(inputs.commands) }}
+    steps:
+    - name: Running functional tests for the source repo
+      if: |
+        github.event.review.body == 'recheck'
+        || needs.check-skip.outputs.skip-func-tests == 0
+      uses: canonical/bootstack-actions/.github/actions/func-test@main
+      with:
+        python-version: ${{ inputs.python-version-func }}
+        tox-version: ${{ inputs.tox-version }}
+        working-directory: ${{ inputs.working-directory }}
+        snapcraft: ${{ inputs.snapcraft }}
+        command: ${{ matrix.command }}
+        provider: ${{ inputs.provider }}
+        nested-containers: ${{ inputs.nested-containers }}

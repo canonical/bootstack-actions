@@ -1,0 +1,76 @@
+name: Functional tests
+description: Running functional tests for the source repo
+inputs:
+  python-version:
+    required: true
+    description: "Python version"
+    default: "3.10"
+  tox-version:
+    required: false
+    description: "Tox version, which should be used, e.g. `<4`"
+    default: ""
+  working-directory:
+    required: false
+    description: "To change working directory"
+    default: "."
+  timeout-minutes:
+    required: false
+    description: "Configurable timeout limit for functional test job"
+    default: 60
+  snapcraft:
+    required: false
+    description: "Flag if snap is tested."
+    default: false
+  command:
+    required: false
+    description: Command to run functional test in strategies.
+    default: "make functional"
+  # actions-operator
+  provider:
+    required: false
+    default: "lxd"
+  nested-containers:
+    required: false
+    default: false
+runs:
+  using: "composite"
+  steps:
+  - uses: actions/checkout@v3
+    with:
+      submodules: true
+  - name: Setup Python
+    uses: actions/setup-python@v4
+    with:
+      python-version: ${{ inputs.python-version }}
+  - name: Install tox
+    shell: bash
+    run: |
+      python -m pip install --upgrade pip
+      python -m pip install "tox${{ inputs.tox-version }}"
+  - name: Setup Juju environment
+    uses: charmed-kubernetes/actions-operator@main
+    with:
+      provider: ${{ inputs.provider }}
+  - name: Remove tox install by actions-operator
+    shell: bash
+    run: sudo apt remove tox -y
+  - name: Install snapcraft
+    if: ${{ inputs.snapcraft == 'true' }}
+    shell: bash
+    run: sudo snap install snapcraft --classic
+  - name: Enabled nested LXD containers
+    if: ${{ inputs.provider == 'lxd' && inputs.nested-containers == 'true' }}
+    shell: bash
+    run: |
+      # create new lxd project and configure nesting & privileged
+      lxc profile show default > default-lxc-profile.yaml
+      lxc project create nested-lxd
+      lxc profile edit --project nested-lxd default < default-lxc-profile.yaml
+      lxc profile set --project nested-lxd default security.nesting=true
+      lxc profile set --project nested-lxd default security.privileged=true
+      # set default project to be nested-lxd project
+      juju model-default project=nested-lxd
+  - name: Run tests with `${{ inputs.command }}`
+    working-directory: ${{ inputs.working-directory }}
+    shell: bash
+    run: ${{ inputs.command }}

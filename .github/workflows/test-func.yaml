@@ -9,22 +9,31 @@ on:
 
 jobs:
   charm-func:
-    uses: ./.github/workflows/_func.yaml
-    secrets: inherit
-    with:
-      python-version: "3.10"
-      tox-version: "<4"
-      working-directory: ./tests/test_charm_repo
-      commands: "['FUNC_ARGS=\"--series jammy\" make functional']"
-      timeout-minutes: 120
-      provider: "lxd"
-      nested-containers: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: true
+      matrix:
+        command: ['FUNC_ARGS=\"--series jammy\" make functional']
+    steps:
+    - name: Running functional tests for the charm source repo
+      uses: ./.github/actions/func-test
+      with:
+        python-version: "3.10"
+        tox-version: "<4"
+        working-directory: ./tests/test_charm_repo
+        command: ${{ matrix.command }}
+        provider: "lxd"
+        nested-containers: true
 
   snap-func:
-    uses: ./.github/workflows/_func.yaml
-    secrets: inherit
-    with:
-      python-version: "3.10"
-      tox-version: "<4"
-      working-directory: ./tests/test_snap_repo
-      snapcraft: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+    - name: Running functional tests for the snap source repo
+      uses: ./.github/actions/func-test
+      with:
+        python-version: "3.10"
+        tox-version: "<4"
+        working-directory: ./tests/test_snap_repo
+        snapcraft: true
