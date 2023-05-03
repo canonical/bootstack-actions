@@ -1,4 +1,4 @@
-name: 'Check skips'
+name: 'Check skip'
 description: 'Check whether some workflows should be skipped'
 inputs:
   ignore-changes:
@@ -10,14 +10,14 @@ inputs:
       Examples:
       - "^(README.md|doc/|tests/unit/)"
     default: "^$"
-  check-lint-unit-skip:
+  last-workflow-file:
     required: false
-    description: "Whether to check the possibility of skipping lint and unit tests"
-    default: false
-  check-func-skip:
+    description: "The file that triggered previous workflows"
+    default: "pr.yaml"
+  last-workflow-wait-minute:
     required: false
-    description: "Whether to check the possibility of skipping functional tests"
-    default: false
+    description: "The max waiting time in case the last workflow is still in progress"
+    default: 60
 outputs:
   skip-lint-unit-tests:
     description: "Whether to skip lint and unit tests"
@@ -28,15 +28,20 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
     - name: Get latest workflow info
       id: latest-workflow
       env:
         CURRENT_BRANCH: ${{ github.event.pull_request.head.ref }}
+        LAST_WORKFLOW_FILE: ${{ inputs.last-workflow-file }}
+        LAST_WORKFLOW_WAIT_TIME: ${{ inputs.last-workflow-wait-time }}
       shell: bash
       run: |
         function get_last_workflow() {
-          # get all previus workflows for "test_full.yml" file and current branch
-          _workflows=$(curl -H "Accept: application/vnd.github.v3+json" "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/workflows/pr.yaml/runs?branch=$CURRENT_BRANCH")
+          # get all previus workflows for LAST_WORKFLOW_FILE and current branch
+          _workflows=$(curl -H "Accept: application/vnd.github.v3+json" "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/workflows/$LAST_WORKFLOW_FILE/runs?branch=$CURRENT_BRANCH")
           # clear unsupported characters
           _workflows_safe=$(echo "$_workflows" | tr "\r" " " | tr "\n" " " | tr "\t" " ")
           # select previous (current is with index 0) workflow
@@ -45,8 +50,8 @@ runs:
         }
         # get last workflow
         workflow=$(get_last_workflow)
-        # wait (max is 60min) if the last workflow is still running
-        max_time=$((SECONDS+60*60))
+        # wait (max is 60min by default) if the last workflow is still running
+        max_time=$((SECONDS+$LAST_WORKFLOW_WAIT_TIME*60))
         while [[ "$workflow" != "null" && "$(echo $workflow | jq -r '.status')" != "completed" && $SECONDS -lt $max_time ]];
         do
           workflow=$(get_last_workflow)
@@ -75,7 +80,6 @@ runs:
         fi
     - name: Track changed files in the PR for functional tests
       id: check-files-changes
-      if: ${{ inputs.check-func-skip == 'true' }}
       shell: bash
       run: |
         git remote add upstream $GITHUB_SERVER_URL/$GITHUB_REPOSITORY
@@ -88,7 +92,7 @@ runs:
         else
           export DEFAULT_BRANCH="upstream/master"
         fi
-        echo $DEFAULT_BRANCH
+        echo "default branch: $DEFAULT_BRANCH"
 
         changed=1
         git diff --name-only $DEFAULT_BRANCH | grep -vqE "$IGNORE_CHANGES" || changed=0
@@ -103,7 +107,6 @@ runs:
         IGNORE_CHANGES: ${{inputs.ignore-changes}}
     - name: Check whether to skip lint and unit tests
       id: skip-lint-unit-tests
-      if: ${{ inputs.check-lint-unit-skip == 'true' }}
       env:
         WORKFLOW_STATUS: ${{ fromJson(steps.latest-workflow.outputs.workflow).status }}
         WORKFLOW_CONCLUSION: ${{ fromJson(steps.latest-workflow.outputs.workflow).conclusion }}
@@ -121,7 +124,6 @@ runs:
         fi
     - name: Check whether to skip functional tests
       id: skip-func-tests
-      if: "${{ inputs.check-func-skip == 'true' }}"
       env:
         WORKFLOW_STATUS: ${{ fromJson(steps.latest-workflow.outputs.workflow).status }}
         WORKFLOW_CONCLUSION: ${{ fromJson(steps.latest-workflow.outputs.workflow).conclusion }}
