@@ -75,6 +75,44 @@ For the workflow to be fully functional, you must complete the following steps.
     sonar.coverage.exclusions=tests/**, docs/**, contrib/**, snap/**, *
     ```
 
+## Check Skip Action
+This composite action checks the previous workflow status and compares its head commit with the current to determine whether some tests can be skipped. 
+
+### Sample Usage
+```yaml
+ - name: Check whether some tests can be skipped
+   # Set an ID so that future steps can access its outputs
+   id: check-skip
+   uses: canonical/bootstack-actions/.github/actions/check-skip@main
+   with:
+      # (Optional) Set a list of paths to be ignored when comparing changes.
+      # This input field accepts a regex string. The paths should be relative 
+      # to the repo's root directory.
+      # Examples: "^(README.md|doc/|tests/unit/)"
+      # Default: "^$"
+      ignore-changes: ${{ inputs.ignore-changes }}
+      # (Optional) Set the workflow file of which we want check-skip to look for the previous workflow
+      # Default: pr.yaml
+      last-workflow-file: pull-request.yaml
+      # (Optional) Set the maximum wait time (in minutes) for the previous workflow run to finish
+      # Default: 60
+      last-workflow-wait-minute: 
+```
+
+The action produces 2 outputs, `skip-lint-unit-tests` and `skip-func-tests`, with value `0` or `1`. Value `0` means the corresponding tests should not be skipped, whereas value `1` indicates the skip condition for the corresponding tests are met. 
+
+To use these outputs as conditions in subquential steps, 
+```yaml
+ - name: Running lint check and unit tests for the source repo
+   if: ${{ steps.check-skip.outputs.skip-lint-unit-tests == 0 }}
+   run: |
+      ...
+ - name: Running functional tests for the source repo
+   if: ${{ steps.check-skip.outputs.skip-func-tests == 0 }}
+   run: |
+      ...
+```
+
 ---
 [1]: https://github.com/canonical/bootstack-actions/blob/main/.github/workflows/sonar.yaml
 [2]: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
