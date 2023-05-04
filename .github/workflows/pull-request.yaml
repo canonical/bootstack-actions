@@ -62,8 +62,8 @@ jobs:
     # Note(rgildein): Lint checkers and unit tests should be triggered on any pull requested,
     # approval pull request, review was submitted or review comment with recheck.
     if: |
+      contains(fromJson('["main", "master"]'), github.ref_name) ||
       github.event_name == 'pull_request' ||
-      github.event.review.state == 'approved' ||
       github.event.review.body == 'recheck'
     secrets: inherit
     with:
@@ -78,8 +78,8 @@ jobs:
     # Note(rgildein): Functional tests should be triggered only for commits to
     # master/main branch, if PR was approved or review comment with recheck
     if: |
-      contains(fromJson('["main", "master"]'), github.event.ref_name) ||
-      github.event.review.state == 'approved' ||
+      contains(fromJson('["main", "master"]'), github.ref_name) ||
+      github.event_name == 'pull_request' ||
       github.event.review.body == 'recheck'
     secrets: inherit
     with:
