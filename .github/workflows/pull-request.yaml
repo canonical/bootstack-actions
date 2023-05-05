@@ -59,12 +59,6 @@ jobs:
   lint-unit:
     name: Lint checkers and unit tests
     uses: ./.github/workflows/_lint-unit.yaml
-    # Note(rgildein): Lint checkers and unit tests should be triggered on any pull requested,
-    # approval pull request, review was submitted or review comment with recheck.
-    if: |
-      contains(fromJson('["main", "master"]'), github.ref_name) ||
-      github.event_name == 'pull_request' ||
-      github.event.review.body == 'recheck'
     secrets: inherit
     with:
       python-version: ${{ inputs.python-version-unit }}
@@ -75,12 +69,6 @@ jobs:
     uses: ./.github/workflows/_func.yaml
     needs: 
     - lint-unit
-    # Note(rgildein): Functional tests should be triggered only for commits to
-    # master/main branch, if PR was approved or review comment with recheck
-    if: |
-      contains(fromJson('["main", "master"]'), github.ref_name) ||
-      github.event_name == 'pull_request' ||
-      github.event.review.body == 'recheck'
     secrets: inherit
     with:
       python-version: ${{ inputs.python-version-func }}
