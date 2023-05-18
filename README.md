@@ -10,9 +10,9 @@ workflows that can be directly used will also be found in this repo.
 
 ## Snap release workflow
 This workflow builds and releases snap to the Snap Store after passing lint, unit and
-functional tests. It supports both manual channel selection (via input) and automatic
-channel selection (base on the branch name), which covers the most-common needs for
-snap releases.
+functional tests. The triggering workflow (from the source repo) can specify track
+and risk level as inputs when calling the reuable workflow to release the snap to a
+proper channel.
 
 ## Pull request workflow
 
