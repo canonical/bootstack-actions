@@ -25,14 +25,6 @@ jobs:
           name: snap-artifact
       - id: get-snap-name
         run: echo "SNAP_FILE=$(ls *.snap)" >> $GITHUB_OUTPUT
-      - env:
-          REF: ${{ github.ref_name }}
-          CHANNEL: ${{ inputs.channel == '' }}
-          BOOL: ${{ contains(fromJSON('["main", "master"]'), github.ref_name) }}
-        run:
-          echo $REF
-          echo $CHANNEL
-          echo $BOOL
       - name: Release snap to latest/edge when pushed to the default branch
         uses: snapcore/action-publish@v1
         if: |
