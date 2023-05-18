@@ -1,12 +1,18 @@
 # BootStack GitHub actions
 
-These actions is meant to be used for unifying lint, unit and functional tests in GitHub
-workflows. At the same time, workflows that can be directly used will also be found in
-this repo.
+These actions is meant to be used for unifying lint, unit and functional tests,
+charm and snap releases, and sonar integration in GitHub workflows. At the same time,
+workflows that can be directly used will also be found in this repo.
 
 ## Repo configuration workflow
 
 ## Charm release workflow
+
+## Snap release workflow
+This workflow builds and releases snap to the Snap Store after passing lint, unit and
+functional tests. It supports both manual channel selection (via input) and automatic
+channel selection (base on the branch name), which covers the most-common needs for
+snap releases.
 
 ## Pull request workflow
 

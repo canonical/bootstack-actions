@@ -1,0 +1,63 @@
+on:
+  workflow_call:
+    inputs:
+      channel:
+        description: |
+          The channel to which charm should be released. If specified (non-empty string),
+          the snap will be released to the input channel. If kept empty, the channel will
+          be auto-selected base on the current branch. E.g. if the current branch is
+          master or main, the snap will be released to latest/edge; otherwise, the snap will
+          be released to <branch-name>/edge.
+        default: ''
+        required: false
+        type: string
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish Snap
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: snap-artifact
+      - id: get-snap-name
+        run: echo "SNAP_FILE=$(ls *.snap)" >> $GITHUB_OUTPUT
+      - env:
+          REF: ${{ github.ref_name }}
+          CHANNEL: ${{ inputs.channel == '' }}
+          BOOL: ${{ contains(fromJSON('["main", "master"]'), github.ref_name) }}
+        run:
+          echo $REF
+          echo $CHANNEL
+          echo $BOOL
+      - name: Release snap to latest/edge when pushed to the default branch
+        uses: snapcore/action-publish@v1
+        if: |
+          inputs.channel == '' &&
+          contains(fromJSON('["main", "master"]'), github.ref_name)
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: ${{ steps.get-snap-name.outputs.SNAP_FILE }}
+          release: latest/edge
+      - name: Release to custom channel when pushed to a versioned branch
+        uses: snapcore/action-publish@v1
+        if: |
+          inputs.channel == '' &&
+          contains(fromJSON('["main", "master"]'), github.ref_name) == false
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: ${{ steps.get-snap-name.outputs.SNAP_FILE }}
+          release: ${{ github.ref_name }}/edge
+      - name: Release to custom channel with channel input
+        uses: snapcore/action-publish@v1
+        if: inputs.channel != ''
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
+        with:
+          snap: ${{ steps.get-snap-name.outputs.SNAP_FILE }}
+          release: ${{ inputs.channel }}

@@ -1,0 +1,99 @@
+on:
+  workflow_call:
+    inputs:
+      channel:
+        description: |
+          The channel to which charm should be released. If specified (non-empty string),
+          the snap will be released to the input channel. If kept empty, the channel will
+          be auto-selected base on the current branch. E.g. if the current branch is
+          master or main, the snap will be released to latest/edge; otherwise, the snap will
+          be released to <branch-name>/edge.
+        default: ''
+        required: false
+        type: string
+      python-version-unit:
+        required: true
+        description: "Python version"
+        type: string
+        default: "['3.8', '3.10']"
+      python-version-func:
+        required: true
+        description: "Python version"
+        type: string
+        default: "3.10"
+      tox-version:
+        required: false
+        description: "Tox version, which should be used, e.g. `<4`"
+        type: string
+        default: ""
+      working-directory:
+        required: false
+        description: "To change working directory"
+        type: string
+        default: "."
+      snapcraft:
+        required: false
+        description: "Flag if snap is tested."
+        type: boolean
+        default: true
+      commands:
+        required: true
+        description: |
+          Command to run functional test in strategies. It accepts a stringified list
+          of commands, which allows you to run multiple tests with different parameters.
+          This is a required input field.
+          Examples:
+          - "['make functional']"
+          - "['FUNC_ARGS="--series jammy" make functional',
+             'FUNC_ARGS="--series focal" make functional']"
+          - "['tox -e func -- -sv --series jammy', 'tox -e func -- -sv --series focal']"
+        type: string
+      timeout-minutes:
+        required: false
+        description: "Configurable timeout limit for functional test job"
+        type: number
+        default: 60
+      # actions-operator
+      provider:
+        required: false
+        type: string
+        default: "lxd"
+      nested-containers:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  lint-unit:
+    uses: ./.github/workflows/_lint-unit.yaml
+    secrets: inherit
+    with:
+      python-version: ${{ inputs.python-version-unit }}
+      tox-version: ${{ inputs.tox-version }}
+      working-directory: ${{ inputs.working-directory }}
+
+  func:
+    uses: ./.github/workflows/_func.yaml
+    needs: lint-unit
+    secrets: inherit
+    with:
+      python-version: ${{ inputs.python-version-func }}
+      tox-version: ${{ inputs.tox-version }}
+      working-directory: ${{ inputs.working-directory }}
+      timeout-minutes: ${{ inputs.timeout-minutes }}
+      snapcraft: ${{ inputs.snapcraft }}
+      commands: ${{ inputs.commands }}
+      provider: ${{ inputs.provider }}
+      nested-containers: ${{ inputs.nested-containers }}
+
+  build:
+    uses: ./.github/workflows/_snap-build.yaml
+    needs: func
+    secrets: inherit
+  
+  release-snap:
+    uses: ./.github/workflows/_snap-release.yaml
+    needs: build
+    secrets: inherit
+    with:
+      channel: ${{ inputs.channel }}
