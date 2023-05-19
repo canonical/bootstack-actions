@@ -3,19 +3,29 @@ on:
     inputs:
       track:
         description: |
-          The track to which charm should be released. By default, the latest track
-          will be used.
-        default: latest
+          The track to which charm should be released. This input supports a
+          comma-separated tracks in string format. The channels will be a list of
+          track/risk-level combinations. By default, the snap will be released to
+          channel(s) in the "latest" track.
+          Examples:
+          - "latest"
+          - "latest,test,2.9"
         required: false
         type: string
+        default: latest
       risk-level:
         description: |
-          The risk level of the channel to which charm should be released. Valid
-          inputs are: edge, beta, candidate, stable. By default, the snap will be
-          released to a channel with "edge" risk level. 
-        default: edge
+          The risk level to which charm should be released. Valid inputs are one or
+          a combination (in comma-separated string format) of: "edge", "beta",
+          "candidate", "stable". The channels will be a list of track/risk-level
+          combinations. By default, the snap will be released to channel(s) with
+          "edge" risk level.
+          Examples:
+          - "edge"
+          - "edge,candidate"
         required: false
         type: string
+        default: edge
       python-version-unit:
         required: true
         description: "Python version"

@@ -10,9 +10,24 @@ workflows that can be directly used will also be found in this repo.
 
 ## Snap release workflow
 This workflow builds and releases snap to the Snap Store after passing lint, unit and
-functional tests. The triggering workflow (from the source repo) can specify track
-and risk level as inputs when calling the reuable workflow to release the snap to a
-proper channel.
+functional tests. The triggering workflow (from the source repo) can specify track(s)
+and risk level(s) as inputs when calling the reuable workflow to release the snap to the
+proper channel(s). If multiple tracks or risk levels are passed in, the channels will
+be calculated as a list of all combinations of track/risk-level.
+
+Example:
+If the following values are specified for `track` and `risk-level`:
+```
+track: latest, test
+risk-level: edge, candidate
+```
+then the snap will be released to all of the following channels:
+```
+latest/edge
+latest/candidate
+test/edge
+test/candidate
+```
 
 ## Pull request workflow
 
