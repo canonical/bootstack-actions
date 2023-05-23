@@ -20,18 +20,19 @@ on:
         default: "."
       timeout-minutes:
         required: false
-        description: "Configurable timeout limit for functional test job"
+        description: "Configurable timeout limit for functional tests job"
         type: number
         default: 60
       snapcraft:
         required: false
-        description: "Flag if snap is tested."
+        description: |
+          Flag if snap is tested. If set to true, snapcraft will be installed.
         type: boolean
         default: false
       commands:
         required: false
         description: |
-          Command to run functional test in strategies. It defaults to
+          Command to run functional tests in strategies. It defaults to
           `make functional`, but is defined as a list, so `['make functional']`.
           This allows you to run multiple tests with different parameters.
           Examples:

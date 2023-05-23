@@ -25,7 +25,8 @@ on:
         default: "."
       snapcraft:
         required: false
-        description: "Flag if snap is tested."
+        description: |
+          Flag if snap is tested. If set to true, snapcraft will be installed.
         type: boolean
         default: false
       timeout-minutes:
@@ -36,7 +37,7 @@ on:
       commands:
         required: true
         description: |
-          Command to run functional test in strategies. It accepts a stringified list
+          Command to run functional tests in strategies. It accepts a stringified list
           of commands, which allows you to run multiple tests with different parameters.
           This is a required input field.
           Examples:

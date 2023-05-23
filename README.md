@@ -1,6 +1,6 @@
 # BootStack GitHub actions
 
-These actions is meant to be used for unifying lint, unit and functional tests,
+These actions are meant to be used for unifying lint, unit and functional tests,
 charm and snap releases, and sonar integration in GitHub workflows. At the same time,
 workflows that can be directly used will also be found in this repo.
 
@@ -9,25 +9,9 @@ workflows that can be directly used will also be found in this repo.
 ## Charm release workflow
 
 ## Snap release workflow
-This workflow builds and releases snap to the Snap Store after passing lint, unit and
-functional tests. The triggering workflow (from the source repo) can specify track(s)
-and risk level(s) as inputs when calling the reuable workflow to release the snap to the
-proper channel(s). If multiple tracks or risk levels are passed in, the channels will
-be calculated as a list of all combinations of track/risk-level.
-
-Example:
-If the following values are specified for `track` and `risk-level`:
-```
-track: latest, test
-risk-level: edge, candidate
-```
-then the snap will be released to all of the following channels:
-```
-latest/edge
-latest/candidate
-test/edge
-test/candidate
-```
+This workflow builds and releases a snap to the Snap Store after passing lint, unit and
+functional tests. The triggering workflow (from the source repo) can specify one or multiple
+channel(s) as an input when calling the reusable workflow to properly release the snap.
 
 ## Pull request workflow
 

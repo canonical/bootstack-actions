@@ -1,31 +1,16 @@
 on:
   workflow_call:
     inputs:
-      track:
+      channel:
         description: |
-          The track to which charm should be released. This input supports a
-          comma-separated tracks in string format. The channels will be a list of
-          track/risk-level combinations. By default, the snap will be released to
-          channel(s) in the "latest" track.
+          A comma-separated list of channels, to which the snap should be released, in
+          string format. By default, the snap will be released to the "latest/edge" channel.
           Examples:
-          - "latest"
-          - "latest,test,2.9"
+          - "latest/edge"
+          - "latest/edge,latest/candidate,2.9/edge"
         required: false
         type: string
-        default: latest
-      risk-level:
-        description: |
-          The risk level to which charm should be released. Valid inputs are one or
-          a combination (in comma-separated string format) of: "edge", "beta",
-          "candidate", "stable". The channels will be a list of track/risk-level
-          combinations. By default, the snap will be released to channel(s) with
-          "edge" risk level.
-          Examples:
-          - "edge"
-          - "edge,candidate"
-        required: false
-        type: string
-        default: edge
+        default: latest/edge
       python-version-unit:
         required: true
         description: "Python version"
@@ -48,13 +33,14 @@ on:
         default: "."
       snapcraft:
         required: false
-        description: "Flag if snap is tested."
+        description: |
+          Flag if snap is tested. If set to true, snapcraft will be installed.
         type: boolean
         default: true
       commands:
         required: true
         description: |
-          Command to run functional test in strategies. It accepts a stringified list
+          Command to run functional tests in strategies. It accepts a stringified list
           of commands, which allows you to run multiple tests with different parameters.
           This is a required input field.
           Examples:
@@ -65,7 +51,7 @@ on:
         type: string
       timeout-minutes:
         required: false
-        description: "Configurable timeout limit for functional test job"
+        description: "Configurable timeout limit for functional tests job"
         type: number
         default: 60
       # actions-operator
@@ -111,5 +97,4 @@ jobs:
     needs: build
     secrets: inherit
     with:
-      track: ${{ inputs.track }}
-      risk-level: ${{ inputs.risk-level }}
+      channel: ${{ inputs.channel }}

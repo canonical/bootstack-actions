@@ -1,31 +1,16 @@
 on:
   workflow_call:
     inputs:
-      track:
+      channel:
         description: |
-          The track to which charm should be released. This input supports a
-          comma-separated tracks in string format. The channels will be a list of
-          track/risk-level combinations. By default, the snap will be released to
-          channel(s) in the "latest" track.
+          A comma-separated list of channels, to which the snap should be released, in
+          string format. By default, the snap will be released to the "latest/edge" channel.
           Examples:
-          - "latest"
-          - "latest,test,2.9"
+          - "latest/edge"
+          - "latest/edge,latest/candidate,2.9/edge"
         required: false
         type: string
-        default: latest
-      risk-level:
-        description: |
-          The risk level to which charm should be released. Valid inputs are one or
-          a combination (in comma-separated string format) of: "edge", "beta",
-          "candidate", "stable". The channels will be a list of track/risk-level
-          combinations. By default, the snap will be released to channel(s) with
-          "edge" risk level.
-          Examples:
-          - "edge"
-          - "edge,candidate"
-        required: false
-        type: string
-        default: edge
+        default: latest/edge
   workflow_dispatch:
 
 jobs:
@@ -40,40 +25,10 @@ jobs:
           name: snap-artifact
       - id: get-snap-name
         run: echo "SNAP_FILE=$(ls *.snap)" >> $GITHUB_OUTPUT
-      - name: Generate a comma separated list of channels to release the snap to
-        id: get-channels
-        env:
-          TRACKS: ${{ inputs.track }}
-          RISKLEVELS: ${{ inputs.risk-level }}
-        run: |
-          # split comma-separated TRACKS and RISKLEVELS to arrays
-          IFS=',' read -ra track_array <<< "$TRACKS"
-          IFS=',' read -ra risklevel_array <<< "$RISKLEVELS"
-
-          # initalize an empty CHANNELS string. It will hold the combination of every
-          # track and risk-level in comma-separated format
-          CHANNELS=""
-
-          # iterate both arrays to get all possible combinations of tracks and risk-levels
-          for i in "${track_array[@]}"; do
-            for j in "${risklevel_array[@]}"; do
-              if [[ $CHANNELS == "" ]]; then
-                # if CHANNELS is empty, set CHANNELS to the first track/risk-level combination 
-                CHANNELS="$i/$j"
-              else
-                # otherwise, concatenate CHANNELS with a new track/risk-level
-                # combination (with a comma in between)
-                CHANNELS="$CHANNELS,$i/$j"
-              fi
-            done;
-          done
-
-          # set CHANNELS to a github output variable so it can be used in future steps
-          echo "channels=$CHANNELS" >> $GITHUB_OUTPUT
       - name: Release snap to the specified channel
         uses: snapcore/action-publish@v1
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.STORE_LOGIN }}
         with:
           snap: ${{ steps.get-snap-name.outputs.SNAP_FILE }}
-          release: ${{ steps.get-channels.outputs.channels }}
+          release: ${{ inputs.channel }}
