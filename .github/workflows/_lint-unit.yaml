@@ -10,7 +10,9 @@ on:
         default: "['3.10']"
       tox-version:
         required: false
-        description: "Tox version, which should be used, e.g. `<4`"
+        description: |
+          Tox version, which should be used, e.g. `<4`. If not specified, the
+          latest version of tox will be installed.
         type: string
         default: ""
       working-directory:
