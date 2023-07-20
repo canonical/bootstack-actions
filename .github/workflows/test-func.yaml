@@ -19,6 +19,7 @@ jobs:
       timeout-minutes: 120
       provider: "lxd"
       nested-containers: true
+      juju-channel: "2.9/stable"
 
   snap-func:
     uses: ./.github/workflows/_func.yaml

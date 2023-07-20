@@ -54,6 +54,10 @@ on:
              'FUNC_ARGS="--series focal" make functional']"
           - "['tox -e func -- -sv --series jammy', 'tox -e func -- -sv --series focal']"
         type: string
+      juju-channel:
+        required: false
+        type: string
+        default: "2.9/stable"
       # actions-operator
       provider:
         required: false

@@ -56,6 +56,10 @@ on:
         description: "Configurable timeout limit for functional tests job"
         type: number
         default: 60
+      juju-channel:
+        required: false
+        type: string
+        default: "2.9/stable"
       # actions-operator
       provider:
         required: false

@@ -20,6 +20,7 @@ jobs:
       tox-version: "<4"
       working-directory: ./tests/test_charm_repo
       commands: "['FUNC_ARGS=\"--series jammy\" make functional']"
+      juju-channel: "2.9/stable"
 
   snap-pr:
     uses: ./.github/workflows/pull-request.yaml
