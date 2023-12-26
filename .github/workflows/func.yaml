@@ -49,11 +49,48 @@ on:
         required: false
         type: string
         default: "2.9/stable"
+      # runs-on for self-hosted runner
+      # workaround from: https://github.com/orgs/community/discussions/11692#discussioncomment-3541856
+      runs-on:
+        required: false
+        type: string
+        default: "['self-hosted']"
+        description: "JSON format list of labels for runs-on"
+      action-operator:
+        required: false
+        type: boolean
+        default: true
+        description: "Use action-operator to setup environment or not"
+      external-controller:
+        required: false
+        type: boolean
+        default: false
+        description: "Use external juju controller or not"
+      lxd-channel:
+        required: false
+        type: string
+        default: "latest/stable"
+        description: "snap channel for lxd regardless of provider, installed via snap"
+      juju-controller:
+        required: false
+        type: string
+        default: ""
+        description: "External juju controller name to use"
+    secrets:
+      juju-controllers-yaml:
+        required: false
+        description: "A base64 encoded controllers.yaml file to use"
+      juju-clouds-yaml:
+        required: false
+        description: "A base64 encoded clouds.yaml file to use"
+      juju-accounts-yaml:
+        required: false
+        description: "A base64 encoded accounts.yaml file to use"
 
 jobs:
   func:
     name: Functional tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJson(inputs.runs-on) }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     steps:
       - uses: actions/checkout@v3
@@ -68,12 +105,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install "tox${{ inputs.tox-version }}"
       - name: Setup Juju ${{ inputs.juju-channel }} environment
+        if: ${{ inputs.action-operator }}
         uses: charmed-kubernetes/actions-operator@main
         with:
           provider: ${{ inputs.provider }}
           juju-channel: ${{ inputs.juju-channel }}
-      - name: Remove tox install by actions-operator
-        run: sudo apt remove tox -y
       - name: Install snapcraft
         if: ${{ inputs.snapcraft }}
         run: sudo snap install snapcraft --classic
@@ -88,10 +124,48 @@ jobs:
           lxc profile set --project nested-lxd default security.privileged=true
           # set default project to be nested-lxd project
           juju model-default project=nested-lxd
+      - name: external controller juju config
+        if: ${{ inputs.external-controller }}
+        run: |
+          mkdir -p $HOME/.local/share/juju
+          echo ${{ secrets.juju-clouds-yaml }} | base64 -d > $HOME/.local/share/juju/clouds.yaml
+          echo ${{ secrets.juju-controllers-yaml }} | base64 -d > $HOME/.local/share/juju/controllers.yaml
+          echo ${{ secrets.juju-accounts-yaml }} | base64 -d > $HOME/.local/share/juju/accounts.yaml
+      - name: external controller lxd config
+        if: ${{ inputs.external-controller }}
+        run: |
+          sudo apt update -yqq
+          sudo apt remove -qy lxd
+          if [[ $(cat /etc/os-release | grep VERSION_CODENAME) == *"focal"* ]]; then \
+            suod apt remove -qy lxd-client
+          fi
+          sudo snap install lxd --channel ${{ inputs.lxd-channel }}
+          sudo lxd waitready
+          sudo lxd init --auto
+          sudo chmod a+wr /var/snap/lxd/common/lxd/unix.socket
+          lxc network set lxdbr0 ipv6.address none
+          sudo usermod -a -G lxd $USER
+          if [[ $(cat /etc/os-release | grep VERSION_CODENAME) == *"jammy"* ]]; then \
+            sudo iptables -F FORWARD
+            sudo iptables -P FORWARD ACCEPT
+          fi
+      - name: external controller required package
+        if: ${{ inputs.external-controller }}
+        run: |
+           sudo snap install charmcraft --channel latest/stable --classic
+           sudo snap install juju --channel ${{ inputs.juju-channel }}
+           sudo --preserve-env=http_proxy,https_proxy,no_proxy pip3 install tox
+           juju switch ${{ inputs.juju-controller }}
+           # Workaround to avoid missing cookies bug
+           # https://github.com/search?q=repo%3Ajuju%2Fpython-libjuju%20cookies_for_controller&type=code
+           juju show-controller ${{ inputs.juju-controller }} &>/dev/null
       - name: Show juju information
         run: |
           juju version
           juju controllers | grep Version -A 1 | awk '{print $9}'
+      - name: Show snap information
+        run: |
+          snap list
       - name: Run tests with `${{ inputs.command }}`
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.command }}
