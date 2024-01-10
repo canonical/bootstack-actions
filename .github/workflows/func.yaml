@@ -76,13 +76,18 @@ on:
         type: string
         default: ""
         description: "External juju controller name to use"
+      pytest-env:
+        required: false
+        type: string
+        description: "Extra pytest environment for pytest, base64 encoded env file"
+      zaza-yaml:
+        required: false
+        type: string
+        description: "Extra zaza yaml, base64 encoded yaml string"
     secrets:
       juju-controllers-yaml:
         required: false
         description: "A base64 encoded controllers.yaml file to use"
-      juju-clouds-yaml:
-        required: false
-        description: "A base64 encoded clouds.yaml file to use"
       juju-accounts-yaml:
         required: false
         description: "A base64 encoded accounts.yaml file to use"
@@ -90,7 +95,6 @@ on:
         required: false
         description: |
           A base64 encoded openstack authentication env file.
-
 
 jobs:
   func:
@@ -133,7 +137,6 @@ jobs:
         if: ${{ inputs.external-controller }}
         run: |
           mkdir -p $HOME/.local/share/juju
-          echo ${{ secrets.juju-clouds-yaml }} | base64 -d > $HOME/.local/share/juju/clouds.yaml
           echo ${{ secrets.juju-controllers-yaml }} | base64 -d > $HOME/.local/share/juju/controllers.yaml
           echo ${{ secrets.juju-accounts-yaml }} | base64 -d > $HOME/.local/share/juju/accounts.yaml
       - name: external controller lxd config
@@ -171,11 +174,21 @@ jobs:
            else
              echo "Skip because missing openstack-auth-env secrets"
            fi
+      - name: pytest env
+        if: ${{ inputs.pytest-env }}
+        run: |
+           echo ${{ inputs.pytest-env }} | base64 -d | grep 'PYTEST_' >> "$GITHUB_ENV"
+      - name: zaza yaml
+        if: ${{ inputs.zaza-yaml }}
+        run: |
+           echo ${{ inputs.zaza-yaml }} | base64 -d >> $HOME/.zaza.yaml
       - name: external controller required package
         if: ${{ inputs.external-controller }}
         run: |
+           # unzip is needed because some of the legacy charm require unzip in Makefile
+           sudo apt install -y unzip
            sudo snap install charmcraft --channel latest/stable --classic
-           sudo snap install juju --channel ${{ inputs.juju-channel }}
+           sudo snap install juju --channel ${{ inputs.juju-channel }} --classic
            sudo --preserve-env=http_proxy,https_proxy,no_proxy pip3 install tox
            juju switch ${{ inputs.juju-controller }}
            # Workaround to avoid missing cookies bug
