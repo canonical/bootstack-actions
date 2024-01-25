@@ -137,8 +137,13 @@ jobs:
         if: ${{ inputs.external-controller }}
         run: |
           mkdir -p $HOME/.local/share/juju
-          echo ${{ secrets.juju-controllers-yaml }} | base64 -d > $HOME/.local/share/juju/controllers.yaml
-          echo ${{ secrets.juju-accounts-yaml }} | base64 -d > $HOME/.local/share/juju/accounts.yaml
+          if [[ "${{ secrets.juju-controllers-yaml}}" != '' || "${{ secrets.juju-accounts-yaml}}" != '' ]]; then
+            echo ${{ secrets.juju-controllers-yaml }} | base64 -d > $HOME/.local/share/juju/controllers.yaml
+            echo ${{ secrets.juju-accounts-yaml }} | base64 -d > $HOME/.local/share/juju/accounts.yaml
+          else
+            echo "Juju controllers yaml or accounts yaml secrets are not present."
+            exit 1
+          fi
       - name: external controller lxd config
         if: ${{ inputs.external-controller }}
         run: |
