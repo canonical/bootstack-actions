@@ -70,7 +70,7 @@ jobs:
             sudo iptables -P FORWARD ACCEPT
           fi
       - name: Upload charm to CharmHub
-        uses: canonical/charming-actions/upload-charm@2.4.0
+        uses: canonical/charming-actions/upload-charm@2.5.0-rc
         with:
           credentials: "${{ secrets.CHARMHUB_TOKEN }}"
           github-token: "${{ secrets.GITHUB_TOKEN }}"
