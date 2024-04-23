@@ -51,7 +51,7 @@ on:
       juju-channel:
         required: false
         type: string
-        default: "2.9/stable"
+        default: "3.4/stable"
       # actions-operator
       provider:
         required: false
