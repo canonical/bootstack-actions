@@ -32,20 +32,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
       - name: Download Artifact
         if: ${{ inputs.artifact != '' }}
         id: download_artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: "${{ inputs.artifact }}"
       - name: Unpack Artifact
         if: ${{ inputs.artifact != '' }}
         run: sudo apt-get update && sudo apt-get install tar && tar xf artifact.tar.gz
       - name: Upload charm to CharmHub
-        uses: canonical/charming-actions/upload-charm@2.1.1
+        uses: canonical/charming-actions/upload-charm@2.4.0
         with:
           credentials: "${{ secrets.CHARMHUB_TOKEN }}"
           github-token: "${{ secrets.GITHUB_TOKEN }}"
