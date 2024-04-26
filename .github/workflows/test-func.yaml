@@ -15,11 +15,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - command: "make functional"
+          - command: "TEST_REQUIREMENTS='juju<3' make functional"
             juju-channel: "2.9/stable"
-          - command: "make functional31"
+          - command: "make functional"
             juju-channel: "3.4/stable"
     with:
+      command: ${{ matrix.command }}
+      juju-channel: ${{ matrix.juju-channel }}
       nested-containers: true
       timeout-minutes: 120
       working-directory: ./tests/test_charm_repo
