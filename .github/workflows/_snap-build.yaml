@@ -18,3 +18,4 @@ jobs:
         with:
           name: snap-artifact
           path: ${{ steps.build.outputs.snap }}
+          overwrite: true  # Note(rgildein): This should not be used, but we need to align with behavior of v3. https://github.com/canonical/bootstack-actions/issues/54
