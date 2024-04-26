@@ -17,10 +17,9 @@ jobs:
     with:
       python-version-unit: "['3.10']"
       python-version-func: "3.10"
-      tox-version: "<4"
       working-directory: ./tests/test_charm_repo
       commands: "['FUNC_ARGS=\"--series jammy\" make functional']"
-      juju-channel: "2.9/stable"
+      juju-channel: "3.4/stable"
 
   snap-pr:
     uses: ./.github/workflows/pull-request.yaml
@@ -28,7 +27,6 @@ jobs:
     with:
       python-version-unit: "['3.10']"
       python-version-func: "3.10"
-      tox-version: "<4"
       working-directory: ./tests/test_snap_repo
       snapcraft: true
       commands: "['make functional']"
