@@ -25,6 +25,7 @@ jobs:
         id: build
       - name: Upload locally built Snap artifact
         uses: actions/upload-artifact@v4
+        overwrite: true  # Note(rgildein): This should not be used, but we need to align with behavior of v3. https://github.com/canonical/bootstack-actions/issues/54
         with:
           name: snap-artifact
           path: ${{ steps.build.outputs.snap }}
