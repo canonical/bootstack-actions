@@ -24,7 +24,6 @@ help:
 	@echo " make reformat - run black and isort and reformat files"
 	@echo " make unittests - run the tests defined in the unittest subdirectory"
 	@echo " make functional - run the tests defined in the functional subdirectory"
-	@echo " make functional31 - run the tests defined in the functional subdirectory with juju 3.1 requirements"
 	@echo " make test - run lint, unittests and functional targets"
 	@echo ""
 
@@ -77,12 +76,8 @@ functional:
 	@echo "Executing functional tests using built charm at ${PROJECTPATH}"
 	@CHARM_LOCATION=${PROJECTPATH} tox -e func -- ${FUNC_ARGS}
 
-functional31:
-	@echo "Executing functional tests using built charm at ${PROJECTPATH} with juju 3.1 requirements"
-	@CHARM_LOCATION=${PROJECTPATH} tox -e func31 -- ${FUNC_ARGS}
-
 test: lint unittests functional
 	@echo "Tests completed for charm ${CHARM_NAME}."
 
 # The targets below don't depend on a file
-.PHONY: help dev-environment pre-commit submodules submodules-update clean build lint reformat unittests functional functional31
+.PHONY: help dev-environment pre-commit submodules submodules-update clean build lint reformat unittests functional

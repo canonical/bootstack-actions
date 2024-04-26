@@ -13,7 +13,7 @@ jobs:
     name: Sync repository settings
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Load config file for repo configuration
         id: load_config
         shell: bash
