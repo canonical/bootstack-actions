@@ -1,4 +1,5 @@
 """Configuration for Test charm functional tets."""
+
 import pytest
 from _pytest.config import argparsing
 from _pytest.fixtures import FixtureRequest
