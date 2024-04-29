@@ -8,13 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # fetch all history for proper versioning
       - uses: snapcore/action-build@v1
         id: build
       - name: Upload locally built Snap artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: snap-artifact
           path: ${{ steps.build.outputs.snap }}
+          overwrite: true  # Note(rgildein): This should not be used, but we need to align with behavior of v3. https://github.com/canonical/bootstack-actions/issues/54

@@ -13,19 +13,17 @@ jobs:
     secrets: inherit
     with:
       python-version: "3.10"
-      tox-version: "<4"
       working-directory: ./tests/test_charm_repo
       commands: "['FUNC_ARGS=\"--series jammy\" make functional']"
       timeout-minutes: 120
       provider: "lxd"
       nested-containers: true
-      juju-channel: "2.9/stable"
+      juju-channel: "3.4/stable"
 
   snap-func:
     uses: ./.github/workflows/_func.yaml
     secrets: inherit
     with:
       python-version: "3.10"
-      tox-version: "<4"
       working-directory: ./tests/test_snap_repo
       snapcraft: true
