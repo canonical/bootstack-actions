@@ -11,10 +11,10 @@ on:
       tox-version:
         required: false
         description: |
-          Tox version, which should be used. The latest
-          3.x version will be used by default.
+          Tox version, which should be used, e.g. `<4`. If not specified, the
+          latest version of tox will be installed.
         type: string
-        default: "<4"
+        default: ""
       working-directory:
         required: false
         description: "To change working directory"
@@ -48,7 +48,7 @@ on:
       juju-channel:
         required: false
         type: string
-        default: "2.9/stable"
+        default: "3.4/stable"
       # runs-on for self-hosted runner
       # workaround from: https://github.com/orgs/community/discussions/11692#discussioncomment-3541856
       runs-on:
@@ -102,11 +102,11 @@ jobs:
     runs-on: ${{ fromJson(inputs.runs-on) }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python-version }}
       - name: Install tox

@@ -16,6 +16,7 @@ jobs:
       matrix:
         python-version: ['3.8', '3.10']
     with:
+      python-version: ${{ matrix.python-version }}
       working-directory: ./tests/test_charm_repo
 
   snap-lint-unit:
@@ -26,4 +27,5 @@ jobs:
       matrix:
         python-version: ['3.8', '3.10']
     with:
+      python-version: ${{ matrix.python-version }}
       working-directory: ./tests/test_snap_repo
