@@ -84,6 +84,11 @@ on:
         required: false
         type: string
         description: "Extra zaza yaml, base64 encoded yaml string"
+      model-constraints:
+        required: false
+        type: string
+        default: ""
+        description: "MODEL_CONSTRAINTS used by juju"
     secrets:
       juju-controllers-yaml:
         required: false
@@ -204,3 +209,6 @@ jobs:
       - name: Run tests with `${{ inputs.command }}`
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.command }}
+        env:
+          MODEL_CONSTRAINTS: ${{ inputs.model-constraints }}
+
