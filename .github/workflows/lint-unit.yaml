@@ -43,14 +43,6 @@ jobs:
     - name: Run unit tests
       working-directory: ${{ inputs.working-directory }}
       run: tox -e unit
-    - name: Save PR number to file
-      run: echo ${{ github.event.number }} > PR_NUMBER.txt
-    - name: Archive PR number
-      uses: actions/upload-artifact@v4
-      with:
-        name: PR_NUMBER
-        path: PR_NUMBER.txt
-        overwrite: true # Note(rgildein): This should not be used, but we need to align with behavior of v3. https://github.com/canonical/bootstack-actions/issues/54
     - name: Archive code coverage results
       uses: actions/upload-artifact@v4
       with:
